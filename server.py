@@ -388,9 +388,10 @@ def generate_image(data: dict) -> Image:
 
 
 def image_to_base64(image: Image, quality: int = 75) -> str:
-    buffered = BytesIO()
-    image.save(buffered, format="JPEG", quality=quality)
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    buffer = BytesIO()
+    image.convert("RGB")
+    image.save(buffer, format="JPEG", quality=quality)
+    img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return img_str
 
 # Reads an API key from an already existing file. If that file doesn't exist, create it.
@@ -676,10 +677,14 @@ def edge_tts_generate():
         abort(400, '"text" is required')
     if "voice" not in data or not isinstance(data["voice"], str):
         abort(400, '"voice" is required')
+    if "rate" in data and isinstance(data['rate'], int):
+        rate = data['rate']
+    else:
+        rate = 0
     # Remove asterisks
     data["text"] = data["text"].replace("*", "")
     try:
-        audio = edge.generate_audio(text=data["text"], voice=data["voice"])
+        audio = edge.generate_audio(text=data["text"], voice=data["voice"], rate=rate)
         return Response(audio, mimetype="audio/mpeg")
     except Exception as e:
         print(e)
